@@ -1,3 +1,4 @@
+import { searchGooglePlaces } from "@/lib/googlePlaces";
 import { FoodSearchSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
@@ -19,10 +20,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const places = await searchGooglePlaces(parsed.data);
+
     return Response.json({
       success: true,
-      message: "The backend received valid search information.",
-      receivedData: parsed.data,
+      resultCount: places.length,
+      places,
     });
   } catch (error) {
     console.error("Recommendation route error:", error);
@@ -30,7 +33,10 @@ export async function POST(request: Request) {
     return Response.json(
       {
         success: false,
-        error: "The request could not be processed.",
+        error:
+          error instanceof Error
+            ? error.message
+            : "The restaurant search failed.",
       },
       {
         status: 500,

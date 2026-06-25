@@ -123,10 +123,14 @@ const response = await fetch("/api/recommendations", {
   body: JSON.stringify(payload),
 });
 
-const data: unknown = await response.json();
+const data = await response.json();
 
 if (!response.ok) {
-  throw new Error("The recommendation request failed.");
+  throw new Error(
+    typeof data.error === "string"
+      ? data.error
+      : "The recommendation request failed.",
+  );
 }
 
 setPreview(payload);
