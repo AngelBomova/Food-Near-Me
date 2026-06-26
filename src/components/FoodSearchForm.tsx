@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import RestaurantList from "@/components/RestaurantList";
+import type { RecommendedPlace } from "@/lib/googlePlaces";
 
 type Coordinates = {
   latitude: number;
@@ -21,6 +23,13 @@ type SearchPayload = {
   foodType: string;
   serviceStyles: string[];
   extraNotes: string | null;
+};
+
+type RecommendationsResponse = {
+  success: boolean;
+  resultCount?: number;
+  places?: RecommendedPlace[];
+  error?: string;
 };
 
 function getBrowserLocation(): Promise<Coordinates> {
@@ -59,11 +68,12 @@ export default function FoodSearchForm() {
   const [maxMiles, setMaxMiles] = useState(10);
   const [notesNotApplicable, setNotesNotApplicable] = useState(false);
   const [status, setStatus] = useState("");
-  const [preview, setPreview] = useState<SearchPayload | null>(null);
+  const [places, setPlaces] = useState<RecommendedPlace[] | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPreview(null);
+    setPlaces(null);
 
     const formData = new FormData(event.currentTarget);
 
@@ -81,6 +91,7 @@ export default function FoodSearchForm() {
     }
 
     try {
+      setIsSubmitting(true);
       setStatus("Requesting your location...");
 
       const location = await getBrowserLocation();
@@ -113,36 +124,42 @@ export default function FoodSearchForm() {
 
       setStatus("Searching for recommendations...");
 
-const response = await fetch("/api/recommendations", {
-  method: "POST",
+      const response = await fetch("/api/recommendations", {
+        method: "POST",
 
-  headers: {
-    "Content-Type": "application/json",
-  },
+        headers: {
+          "Content-Type": "application/json",
+        },
 
-  body: JSON.stringify(payload),
-});
+        body: JSON.stringify(payload),
+      });
 
-const data = await response.json();
+      const data = (await response.json()) as RecommendationsResponse;
 
-if (!response.ok) {
-  throw new Error(
-    typeof data.error === "string"
-      ? data.error
-      : "The recommendation request failed.",
-  );
-}
+      if (!response.ok || !data.success) {
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : "The recommendation request failed.",
+        );
+      }
 
-setPreview(payload);
-setStatus("The backend received the search successfully.");
+      const recommendations = data.places ?? [];
 
-console.log("Backend response:", data);
+      setPlaces(recommendations);
+      setStatus(
+        recommendations.length === 1
+          ? "Found 1 matching restaurant."
+          : `Found ${recommendations.length} matching restaurants.`,
+      );
     } catch (error) {
       setStatus(
         error instanceof Error
           ? error.message
           : "An unexpected error occurred.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -301,10 +318,11 @@ console.log("Backend response:", data);
         </button>
 
         <button
-          className="w-full rounded-xl bg-orange-500 px-5 py-4 font-semibold text-black hover:bg-orange-400"
+          className="w-full rounded-xl bg-orange-500 px-5 py-4 font-semibold text-black hover:bg-orange-400 disabled:cursor-wait disabled:opacity-70"
           type="submit"
+          disabled={isSubmitting}
         >
-          Test search form
+          {isSubmitting ? "Searching..." : "Find food near me"}
         </button>
       </form>
 
@@ -314,13 +332,9 @@ console.log("Backend response:", data);
         </p>
       )}
 
-      {preview && (
-        <div className="mt-6">
-          <h2 className="mb-3 text-lg font-semibold">Generated search data</h2>
-
-          <pre className="overflow-x-auto rounded-xl bg-black p-4 text-xs text-green-300">
-            {JSON.stringify(preview, null, 2)}
-          </pre>
+      {places && (
+        <div className="mt-8">
+          <RestaurantList places={places} />
         </div>
       )}
     </section>

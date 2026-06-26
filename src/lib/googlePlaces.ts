@@ -30,6 +30,10 @@ export type GooglePlace = {
   websiteUri?: string;
 };
 
+export type RecommendedPlace = GooglePlace & {
+  distanceMiles: number | null;
+};
+
 type GoogleTextSearchResponse = {
   places?: GooglePlace[];
 };
@@ -60,9 +64,42 @@ function buildSearchQuery(search: FoodSearchRequest): string {
   return parts.join(" ");
 }
 
+function getDistanceMiles(
+  origin: FoodSearchRequest["location"],
+  destination: GooglePlace["location"],
+): number | null {
+  if (
+    destination?.latitude === undefined ||
+    destination.longitude === undefined
+  ) {
+    return null;
+  }
+
+  const earthRadiusMiles = 3958.8;
+  const degreesToRadians = Math.PI / 180;
+  const originLatitude = origin.latitude * degreesToRadians;
+  const destinationLatitude = destination.latitude * degreesToRadians;
+  const latitudeDelta =
+    (destination.latitude - origin.latitude) * degreesToRadians;
+  const longitudeDelta =
+    (destination.longitude - origin.longitude) * degreesToRadians;
+
+  const haversine =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(originLatitude) *
+      Math.cos(destinationLatitude) *
+      Math.sin(longitudeDelta / 2) ** 2;
+
+  return (
+    earthRadiusMiles *
+    2 *
+    Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
+  );
+}
+
 export async function searchGooglePlaces(
   search: FoodSearchRequest,
-): Promise<GooglePlace[]> {
+): Promise<RecommendedPlace[]> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
   if (!apiKey) {
@@ -131,5 +168,35 @@ export async function searchGooglePlaces(
   const data =
     (await response.json()) as GoogleTextSearchResponse;
 
-  return data.places ?? [];
+  return (data.places ?? [])
+    .map((place) => ({
+      ...place,
+      distanceMiles: getDistanceMiles(search.location, place.location),
+    }))
+    .filter((place) => {
+      if (place.distanceMiles === null) {
+        return false;
+      }
+
+      return (
+        place.distanceMiles >= search.distance.minMiles &&
+        place.distanceMiles <= search.distance.maxMiles
+      );
+    })
+    .sort((first, second) => {
+      const ratingDelta = (second.rating ?? 0) - (first.rating ?? 0);
+
+      if (ratingDelta !== 0) {
+        return ratingDelta;
+      }
+
+      const reviewDelta =
+        (second.userRatingCount ?? 0) - (first.userRatingCount ?? 0);
+
+      if (reviewDelta !== 0) {
+        return reviewDelta;
+      }
+
+      return (first.distanceMiles ?? Infinity) - (second.distanceMiles ?? Infinity);
+    });
 }
