@@ -10,7 +10,7 @@ export default function Home() {
           </p>
 
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Find food that matches exactly what you want
+            Food Near Me
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-zinc-400">

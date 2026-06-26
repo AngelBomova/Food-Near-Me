@@ -21,16 +21,9 @@ export const FoodSearchSchema = z.object({
 
   budget: z
     .object({
-      minUsd: z.number().min(1),
       maxUsd: z.number().min(1),
     })
-    .refine(
-      (budget) => budget.minUsd <= budget.maxUsd,
-      {
-        message:
-          "Minimum budget cannot exceed maximum budget.",
-      },
-    ),
+    .strict(),
 
   cuisine: z.string().trim().min(1).max(100),
 
@@ -41,10 +34,11 @@ export const FoodSearchSchema = z.object({
       z.enum([
         "drive_through",
         "fast_food",
+        "takeout",
         "sit_down",
       ]),
     )
-    .max(3),
+    .max(4),
 
   extraNotes: z.string().trim().max(500).nullable(),
 });

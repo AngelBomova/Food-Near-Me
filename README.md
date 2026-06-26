@@ -1,7 +1,7 @@
 # Food Near Me
 
 A small Next.js app that helps users find nearby restaurants based on location,
-distance, budget, cuisine, food type, and dining style.
+distance, maximum budget, cuisine, food type, and dining style.
 
 The app asks for the user's browser location, sends the search preferences to a
 backend route, searches Google Places, filters restaurants by distance, and shows
@@ -10,9 +10,9 @@ matching results in the UI.
 ## Features
 
 - Browser geolocation for nearby restaurant search
-- Distance and budget inputs
+- Distance and maximum budget inputs
 - Cuisine and food type search fields
-- Dining style options for drive-through, fast food, and sit-down
+- Dining style options for drive-through, fast food, takeout, and sit-down
 - Google Places restaurant lookup
 - Result cards with rating, distance, service options, and links
 

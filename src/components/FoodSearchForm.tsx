@@ -16,7 +16,6 @@ type SearchPayload = {
     maxMiles: number;
   };
   budget: {
-    minUsd: number;
     maxUsd: number;
   };
   cuisine: string;
@@ -77,16 +76,10 @@ export default function FoodSearchForm() {
 
     const formData = new FormData(event.currentTarget);
 
-    const minBudget = Number(formData.get("minBudget"));
     const maxBudget = Number(formData.get("maxBudget"));
 
     if (minMiles > maxMiles) {
       setStatus("Minimum distance cannot be greater than maximum distance.");
-      return;
-    }
-
-    if (minBudget > maxBudget) {
-      setStatus("Minimum budget cannot be greater than maximum budget.");
       return;
     }
 
@@ -105,7 +98,6 @@ export default function FoodSearchForm() {
         },
 
         budget: {
-          minUsd: minBudget,
           maxUsd: maxBudget,
         },
 
@@ -205,23 +197,7 @@ export default function FoodSearchForm() {
         <fieldset>
           <legend className="text-xl font-semibold">Budget per person</legend>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label>
-              <span className="mb-2 block text-sm text-zinc-300">
-                Minimum budget
-              </span>
-
-              <input
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none focus:border-orange-500"
-                type="number"
-                name="minBudget"
-                min="1"
-                step="1"
-                defaultValue="10"
-                required
-              />
-            </label>
-
+          <div className="mt-4">
             <label>
               <span className="mb-2 block text-sm text-zinc-300">
                 Maximum budget
@@ -274,10 +250,11 @@ export default function FoodSearchForm() {
             Select all that apply.
           </p>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
             {[
               ["drive_through", "Drive-through"],
               ["fast_food", "Fast food"],
+              ["takeout", "Takeout"],
               ["sit_down", "Sit-down"],
             ].map(([value, label]) => (
               <label

@@ -59,6 +59,18 @@ function buildSearchQuery(search: FoodSearchRequest): string {
     parts.push("drive through");
   }
 
+  if (search.serviceStyles.includes("fast_food")) {
+    parts.push("fast food");
+  }
+
+  if (search.serviceStyles.includes("takeout")) {
+    parts.push("takeout");
+  }
+
+  if (search.serviceStyles.includes("sit_down")) {
+    parts.push("dine in");
+  }
+
   parts.push("restaurant");
 
   return parts.join(" ");
